@@ -1,7 +1,10 @@
 @echo off
 
-set PATH=%PATH%;D:\AndroidSdk\cmake\3.22.1\bin;D:\AndroidSdk\ndk\25.2.9519653\toolchains\llvm\prebuilt\windows-x86_64\bin
-set TOOLCHAIN_FILE=D:\AndroidSdk\ndk\25.2.9519653\build\cmake\android.toolchain.cmake
+set ANDROID_SDK_PATH=D:\AndroidSdk
+set NDK_VERSION=25.2.9519653
+
+set PATH=%PATH%;%ANDROID_SDK_PATH%\cmake\3.22.1\bin;%ANDROID_SDK_PATH%\ndk\%NDK_VERSION%\toolchains\llvm\prebuilt\windows-x86_64\bin
+set TOOLCHAIN_FILE=%ANDROID_SDK_PATH%\ndk\%NDK_VERSION%\build\cmake\android.toolchain.cmake
 
 set COMMON_OPTIONS=-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DCMAKE_TOOLCHAIN_FILE=%TOOLCHAIN_FILE% -GNinja
 ::set COMMON_OPTIONS=-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_STANDARD=17 -DCMAKE_TOOLCHAIN_FILE=%TOOLCHAIN_FILE% -GNinja
