@@ -30,8 +30,11 @@ public class CSoundBank implements IEnum {
 	public String[] handleToSoundName;
 
 	private short[] useCount;
+	private final CSoundPlayer player;
 
-	public CSoundBank(CSoundPlayer p) {}
+	public CSoundBank(CSoundPlayer p) {
+		player = p;
+	}
 
 	public void preLoad(CFile f) {
 		nHandlesReel = f.readAShort();
@@ -92,8 +95,12 @@ public class CSoundBank implements IEnum {
 		for (int h = 0; h < nHandlesReel; h++) {
 			if ((app.gaNewFlags & CRunApp.GANF_SAMPLESOVERFRAMES) == 0 || useCount[h] == 0) {
 				if (sounds != null && sounds[h] != null) {
-					sounds[h].release();
-					sounds[h] = null;
+					if (!player.isSamplePlaying((short)h)) {
+						sounds[h].release();
+						sounds[h] = null;
+					} else {
+						sounds[h].markedForDeletion = true;
+					}
 				}
 			}
 		}

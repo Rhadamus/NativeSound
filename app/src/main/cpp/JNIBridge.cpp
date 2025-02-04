@@ -74,14 +74,14 @@ Java_Application_CSoundPlayer_setMultipleSounds(JNIEnv *env, jobject thiz, jbool
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_Application_CSoundPlayer_stopAllSounds(JNIEnv *env, jobject thiz) {
+Java_Application_CSoundPlayer_stopAllSoundsNative(JNIEnv *env, jobject thiz) {
     CSoundPlayer* ptr = getSoundPlayerPtr(env, thiz);
     if (ptr == nullptr) return;
     ptr->stopAllSounds();
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_Application_CSoundPlayer_stop(JNIEnv *env, jobject thiz, jshort handle) {
+Java_Application_CSoundPlayer_stopNative(JNIEnv *env, jobject thiz, jshort handle) {
     CSoundPlayer* ptr = getSoundPlayerPtr(env, thiz);
     if (ptr == nullptr) return;
     ptr->stop(handle);
@@ -172,7 +172,7 @@ Java_Application_CSoundPlayer_pauseChannel(JNIEnv *env, jobject thiz, jint chann
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_Application_CSoundPlayer_stopChannel(JNIEnv *env, jobject thiz, jint channel) {
+Java_Application_CSoundPlayer_stopChannelNative(JNIEnv *env, jobject thiz, jint channel) {
     CSoundPlayer* ptr = getSoundPlayerPtr(env, thiz);
     if (ptr == nullptr) return;
     ptr->stopChannel(channel);

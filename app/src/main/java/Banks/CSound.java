@@ -33,16 +33,19 @@ import Runtime.MMFRuntime;
 public class CSound {
     private long ptr;
     private final String filename;
+    public boolean markedForDeletion;
 
     public CSound(String name, short handle, int frequency, int flags) {
         allocNative1(name, handle, frequency, flags);
         filename = null;
+        markedForDeletion = false;
     }
     private native void allocNative1(String name, short handle, int frequency, int flags);
 
     public CSound(String filename) {
         allocNative2();
         this.filename = filename;
+        markedForDeletion = false;
     }
     private native void allocNative2();
 

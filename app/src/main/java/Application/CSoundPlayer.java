@@ -70,12 +70,14 @@ public class CSoundPlayer {
 	 Note: _volume, _pan and _freq are valid if _volume != -1
 	 */
 	public void play(short handle, int nLoops, int channel, boolean bPrio, int _volume, int _pan, int _freq) {
+		releaseLeakedSounds();
 		CSound sound = app.soundBank.getSoundFromHandle(handle);
 		if (sound == null) return;
 		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		playNative(sound, nLoops, channel, bPrio, _volume, _pan, _freq, hasFocus);
 	}
 	public void playFile(String filename, int nLoops, int channel, boolean bPrio, int _volume, int _pan, int _freq) {
+		releaseLeakedSounds();
 		CSound sound = new CSound(filename);
 		sound.load();
 		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
@@ -86,9 +88,17 @@ public class CSoundPlayer {
 
 	public native void setMultipleSounds(boolean bMultiple);
 
-	public native void stopAllSounds();
+	public void stopAllSounds() {
+		stopAllSoundsNative();
+		releaseLeakedSounds();
+	}
+	private native void stopAllSoundsNative();
 
-	public native void stop(short handle);
+	public void stop(short handle) {
+		stopNative(handle);
+		releaseLeakedSounds();
+	}
+	private native void stopNative(short handle);
 
 	public native boolean isSoundPlaying();
 	public native boolean isSamplePlaying(short handle);
@@ -130,7 +140,11 @@ public class CSoundPlayer {
 
 	public native void pauseChannel(int channel);
 
-	public native void stopChannel(int channel);
+	public void stopChannel(int channel) {
+		stopChannelNative(channel);
+		releaseLeakedSounds();
+	}
+	public native void stopChannelNative(int channel);
 
 	public void resumeChannel(int channel) {
 		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
@@ -188,4 +202,15 @@ public class CSoundPlayer {
 		releaseNative();
 	}
 	private native void releaseNative();
+
+	private void releaseLeakedSounds() {
+		if (app.soundBank.sounds == null) return;
+		for (short h = 0; h < app.soundBank.nHandlesReel; h++) {
+			CSound sound = app.soundBank.sounds[h];
+			if (sound != null && sound.markedForDeletion && !isSamplePlaying(h)) {
+				sound.release();
+				app.soundBank.sounds[h] = null;
+			}
+		}
+	}
 }

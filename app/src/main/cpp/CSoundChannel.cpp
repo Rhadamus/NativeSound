@@ -67,7 +67,7 @@ void CSoundChannel::start(CSound* sound, bool newUninterruptible) {
             if (result > 0) {
                 bufNum++;
             } else if (result < 0) {
-                __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not load stream sound, error reading file (error code %lld)", result);
+                __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not load stream sound with handle %d, error reading file (error code %lld)", sound->getHandle(), result);
                 break;
             }
         }
@@ -173,7 +173,7 @@ void CSoundChannel::setPosition(int newPosition) {
             if (result > 0) {
                 bufNum++;
             } else if (result < 0) {
-                __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not set sound position, error reading file (error code %lld)", result);
+                __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not set sound position of handle %d, error reading file (error code %lld)", currentSound->getHandle(), result);
                 break;
             }
         }
@@ -242,7 +242,7 @@ void CSoundChannel::updateStream() {
             }
         }
         if (result < 0) {
-            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not update stream, error reading file (error code %lld)", result);
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not update stream with handle %d, error reading file (error code %lld)", currentSound->getHandle(), result);
             break;
         }
 
