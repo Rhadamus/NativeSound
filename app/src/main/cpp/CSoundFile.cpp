@@ -42,12 +42,12 @@ void CSoundFile::readFileToMemory() {
 
     alGenBuffers(1, &fileBuffer);
     if ((error = alGetError()) != AL_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to generate OpenAL buffer (error code %d)", error);
+        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to generate file buffer (error code %d)", error);
         return;
     }
     alBufferData(fileBuffer, format, fileData.get(), frameLength * bytesPerFrame, sampleRate);
     if ((error = alGetError()) != AL_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to copy data to OpenAL buffer (error code %d)", error);
+        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to upload data to file buffer (error code %d)", error);
         alDeleteBuffers(1, &fileBuffer);
         return;
     }
@@ -57,5 +57,11 @@ void CSoundFile::readFileToMemory() {
 
 CSoundFile::CSoundFile(int fd, int64_t startOffset, int64_t length) : fd(fd), startOffset(startOffset), length(length) {}
 void CSoundFile::cleanUp() {
-    if (fileBuffer != 0) alDeleteBuffers(1, &fileBuffer);
+    ALenum error;
+    if (fileBuffer != 0) {
+        alDeleteBuffers(1, &fileBuffer);
+        if ((error = alGetError()) != AL_NO_ERROR) {
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to delete file buffer (error code %d)", error);
+        }
+    }
 }
