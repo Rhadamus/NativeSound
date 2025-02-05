@@ -119,6 +119,7 @@ bool CSoundChannel::stop(bool force) {
     if (uninterruptible && !force) return false;
 
     alSourceStop(sourceID);
+    alSourcei(sourceID, AL_BUFFER, 0);
     streamLock.lock();
     currentSound = nullptr;
     streamLock.unlock();
