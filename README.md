@@ -5,6 +5,9 @@ Download one of the releases provided. Find RuntimeAndroid.zip in the Data/Runti
 RuntimeAndroid.zip.
 
 # Building
+**Note:** This section is for those that wish to build NativeSound from source, for example if you have modified it and want to use your modification, or you want to
+contribute code. Otherwise, follow just the installation and ignore this.
+
 Required dependencies:
 * [OpenAL Soft](https://github.com/kcat/openal-soft)
 * [libogg](https://gitlab.xiph.org/xiph/ogg)
