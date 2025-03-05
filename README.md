@@ -1,10 +1,15 @@
 NativeSound is a rewrite of the sound engine of the Android runtime in Clickteam Fusion 2.5, with the objective of providing better performance and loading times.
 
+**Note:** Currently there are stability issues for MP3 files. Please convert all MP3s to OGG to prevent these issues.
+
 # Installing
 Download one of the releases provided. Find RuntimeAndroid.zip in the Data/Runtime/Android folder of your Fusion installation. Drop the contents of NativeSound.zip into
 RuntimeAndroid.zip.
 
 # Building
+**Note:** This section is for those that wish to build NativeSound from source, for example if you have modified it and want to use your modification, or you want to
+contribute code. Otherwise, follow just the installation and ignore this.
+
 Required dependencies:
 * [OpenAL Soft](https://github.com/kcat/openal-soft)
 * [libogg](https://gitlab.xiph.org/xiph/ogg)
