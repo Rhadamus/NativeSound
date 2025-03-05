@@ -15,4 +15,5 @@ public:
     static bool verify(int fd, int64_t startOffset);
 private:
     int64_t dataOffset;
+    int64_t endOffset;
 };

@@ -21,7 +21,13 @@ struct WAVEFmtChunk {
     uint16_t bitsPerSample;
 };
 
-CSoundFileWAV::CSoundFileWAV(int fd, int64_t startOffset, int64_t length) : CSoundFile(fd, startOffset, length) {}
+CSoundFileWAV::CSoundFileWAV(int fd, int64_t startOffset, int64_t length) : CSoundFile(fd, startOffset, length) {
+    if (length == -1) {
+        endOffset = lseek64(fd, 0, SEEK_END);
+    } else {
+        endOffset = startOffset + length;
+    }
+}
 CSoundFileWAV::~CSoundFileWAV() { CSoundFileWAV::close(); }
 
 bool CSoundFileWAV::load() {
@@ -70,11 +76,18 @@ bool CSoundFileWAV::load() {
     return true;
 }
 int64_t CSoundFileWAV::read(void* dest, int64_t numFrames) {
-    int64_t result = ::read(fd, dest, (size_t)(numFrames * bytesPerFrame));
+    size_t byteCount = (size_t)(numFrames * bytesPerFrame);
+    off64_t cursor = lseek64(fd, 0, SEEK_CUR);
+    if (cursor + byteCount > endOffset) {
+        byteCount = endOffset - cursor;
+    }
+    
+    int64_t result = ::read(fd, dest, byteCount);
     if (result <= 0) return result;
     return result / bytesPerFrame;
 }
 void CSoundFileWAV::seek(int64_t frame) {
+    if (frame < 0 || frame > frameLength) return;
     lseek64(fd, dataOffset + frame * bytesPerFrame, SEEK_SET);
 }
 int64_t CSoundFileWAV::tell() {
