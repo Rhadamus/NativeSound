@@ -16,7 +16,9 @@ CSoundFileMP3::CSoundFileMP3(int fd, int64_t startOffset, int64_t length) : CSou
     }
     datasource = { fd, startOffset, endOffset };
 }
-CSoundFileMP3::~CSoundFileMP3() { CSoundFileMP3::close(); }
+CSoundFileMP3::~CSoundFileMP3() {
+    close();
+}
 
 static size_t readMp3(void* userData, void* dest, size_t bytesToRead) {
     CSoundFileMP3::DataSource* src = (CSoundFileMP3::DataSource*)userData;
@@ -62,7 +64,6 @@ int64_t CSoundFileMP3::tell() {
     return (int64_t)file.currentPCMFrame;
 }
 void CSoundFileMP3::close() {
-    cleanUp();
     drmp3_uninit(&file);
     ::close(fd);
 }

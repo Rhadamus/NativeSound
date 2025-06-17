@@ -9,9 +9,9 @@
 
 CSoundFile* CSoundFile::load(int fd, int64_t startOffset, int64_t length) {
     CSoundFile* result;
-    if (CSoundFileWAV::verify(fd, startOffset)) {
+    if (CSoundFileWAV::verify(fd, startOffset, length)) {
         result = new CSoundFileWAV(fd, startOffset, length);
-    } else if (CSoundFileOGG::verify(fd, startOffset)) {
+    } else if (CSoundFileOGG::verify(fd, startOffset, length)) {
         result = new CSoundFileOGG(fd, startOffset, length);
     } else if (CSoundFileMP3::verify(fd, startOffset, length)) {
         result = new CSoundFileMP3(fd, startOffset, length);
@@ -26,6 +26,17 @@ CSoundFile* CSoundFile::load(int fd, int64_t startOffset, int64_t length) {
     }
     return result;
 }
+CSoundFile::CSoundFile(int fd, int64_t startOffset, int64_t length) : fd(fd), startOffset(startOffset), length(length) {}
+CSoundFile::~CSoundFile() {
+    if (fileBuffer != 0) {
+        alDeleteBuffers(1, &fileBuffer);
+        
+        ALenum error = alGetError();
+        if (error != AL_NO_ERROR) {
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to delete file buffer (error code %d)", error);
+        }
+    }
+}
 
 void CSoundFile::readFileToMemory() {
     if (loaded) return;
@@ -34,7 +45,7 @@ void CSoundFile::readFileToMemory() {
 
     int64_t resultRead = read(fileData.get(), frameLength);
     if (resultRead < 0) {
-        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to read entire sound file (error code %lld)", resultRead);
+        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to read entire sound file (error code %lld)", (long long)resultRead);
         return;
     }
 
@@ -53,15 +64,4 @@ void CSoundFile::readFileToMemory() {
     }
 
     loaded = true;
-}
-
-CSoundFile::CSoundFile(int fd, int64_t startOffset, int64_t length) : fd(fd), startOffset(startOffset), length(length) {}
-void CSoundFile::cleanUp() {
-    ALenum error;
-    if (fileBuffer != 0) {
-        alDeleteBuffers(1, &fileBuffer);
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to delete file buffer (error code %d)", error);
-        }
-    }
 }

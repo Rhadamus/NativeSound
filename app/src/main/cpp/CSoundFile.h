@@ -5,7 +5,7 @@
 class CSoundFile {
 public:
     static CSoundFile* load(int fd, int64_t startOffset, int64_t length);
-    virtual ~CSoundFile() = default;
+    virtual ~CSoundFile();
 
     virtual bool load() = 0;
     // Returns number of frames read, or 0 if EOF, or < 0 on error
@@ -33,7 +33,6 @@ protected:
     int bytesPerFrame;
 
     CSoundFile(int fd, int64_t startOffset, int64_t length);
-    void cleanUp();
 private:
     ALuint fileBuffer = 0;
     bool loaded = false;

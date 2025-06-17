@@ -19,7 +19,7 @@ public:
     int64_t tell() override;
     void close() override;
 
-    static bool verify(int fd, int64_t startOffset);
+    static bool verify(int fd, int64_t startOffset, int64_t length);
 private:
     OggVorbis_File file;
     int curBitstream;

@@ -12,7 +12,7 @@ public:
     int64_t tell() override;
     void close() override;
 
-    static bool verify(int fd, int64_t startOffset);
+    static bool verify(int fd, int64_t startOffset, int64_t length);
 private:
     int64_t dataOffset;
     int64_t endOffset;

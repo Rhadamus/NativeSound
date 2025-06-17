@@ -28,7 +28,9 @@ CSoundFileWAV::CSoundFileWAV(int fd, int64_t startOffset, int64_t length) : CSou
         endOffset = startOffset + length;
     }
 }
-CSoundFileWAV::~CSoundFileWAV() { CSoundFileWAV::close(); }
+CSoundFileWAV::~CSoundFileWAV() {
+    close();
+}
 
 bool CSoundFileWAV::load() {
     lseek64(fd, startOffset + 12, SEEK_SET);
@@ -94,11 +96,10 @@ int64_t CSoundFileWAV::tell() {
     return (lseek64(fd, 0, SEEK_CUR) - dataOffset) / bytesPerFrame;
 }
 void CSoundFileWAV::close() {
-    cleanUp();
     ::close(fd);
 }
 
-bool CSoundFileWAV::verify(int fd, int64_t startOffset) {
+bool CSoundFileWAV::verify(int fd, int64_t startOffset, int64_t length) {
     lseek64(fd, startOffset, SEEK_SET);
 
     RIFFChunkHeader riffChunk;

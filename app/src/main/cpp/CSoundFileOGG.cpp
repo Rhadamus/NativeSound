@@ -13,7 +13,9 @@ CSoundFileOGG::CSoundFileOGG(int fd, int64_t startOffset, int64_t length) : CSou
     }
     datasource = { fd, startOffset, endOffset };
 }
-CSoundFileOGG::~CSoundFileOGG() { CSoundFileOGG::close(); }
+CSoundFileOGG::~CSoundFileOGG() {
+    close();
+}
 
 static size_t readOgg(void* dest, size_t size, size_t count, void* datasource) {
     CSoundFileOGG::DataSource* src = (CSoundFileOGG::DataSource*)datasource;
@@ -26,8 +28,8 @@ static size_t readOgg(void* dest, size_t size, size_t count, void* datasource) {
     }
 
     ssize_t result = read(src->fd, dest, byteCount);
-    if (result > 0) return result / size;
-    return result;
+    if (result <= 0) return 0;
+    return result / size;
 }
 static int seekOgg(void* datasource, ogg_int64_t offset, int whence) {
     CSoundFileOGG::DataSource* src = (CSoundFileOGG::DataSource*)datasource;
@@ -100,11 +102,10 @@ int64_t CSoundFileOGG::tell() {
     return ov_pcm_tell(&file);
 }
 void CSoundFileOGG::close() {
-    cleanUp();
     ov_clear(&file);
 }
 
-bool CSoundFileOGG::verify(int fd, int64_t startOffset) {
+bool CSoundFileOGG::verify(int fd, int64_t startOffset, int64_t length) {
     lseek64(fd, startOffset, SEEK_SET);
 
     char magic[4];
