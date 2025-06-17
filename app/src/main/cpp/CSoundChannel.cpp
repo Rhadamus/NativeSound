@@ -128,14 +128,18 @@ bool CSoundChannel::stop(bool force) {
 void CSoundChannel::pause() {
     if (sourceID == 0 || !isPlaying()) return;
 
-    alSourcePause(sourceID);
-    paused = true;
+    if (!paused) {
+        alSourcePause(sourceID);
+        paused = true;
+    }
 }
 void CSoundChannel::resume() {
     if (sourceID == 0 || !isPlaying()) return;
 
-    if (!pausedApp) alSourcePlay(sourceID);
-    paused = false;
+    if (paused) {
+        if (!pausedApp) alSourcePlay(sourceID);
+        paused = false;
+    }
 }
 void CSoundChannel::pauseApp() {
     if (sourceID == 0 || !isPlaying()) return;
@@ -255,7 +259,7 @@ void CSoundChannel::updateFrequency() {
 }
 void CSoundChannel::updateStream() {
     std::lock_guard lock(streamLock);
-
+    
     if (!isPlaying() || (currentSound->getFlags() & SNDF_PLAYFROMDISK) == 0) return;
     CSoundFile* file = currentSound->getFile();
     if (file == nullptr) return;
