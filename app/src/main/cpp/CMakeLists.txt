@@ -29,6 +29,9 @@ add_subdirectory(${VORBIS_DIR} ./vorbis)
 set_target_properties(NativeSound PROPERTIES
         CXX_VISIBILITY_PRESET hidden)
 
+target_link_options(NativeSound PRIVATE
+        "-Wl,-z,max-page-size=16384")
+
 target_link_libraries(NativeSound
         log
         openal
