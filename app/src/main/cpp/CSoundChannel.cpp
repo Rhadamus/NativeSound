@@ -50,14 +50,14 @@ void CSoundChannel::start(CSound* sound, bool newUninterruptible) {
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to clear buffers of source (error code %d)", error);
     }
     if ((sound->getFlags() & SNDF_PLAYFROMDISK) == 0) {
-        if ((sound->getFlags() & SNDF_LOADONCALL) != 0 && !sound->getFile()->isLoadedInMemory()) {
-            sound->getFile()->readFileToMemory();
+        if ((sound->getFlags() & SNDF_LOADONCALL) != 0 && !sound->hasBuffer()) {
+            sound->loadBuffer();
         }
-        if (!sound->getFile()->isLoadedInMemory()) return;
+        if (!sound->hasBuffer()) return;
         currentSound = sound;
 
         if (numLoops > 0) {
-            ALuint buffer = sound->getFile()->getFileBuffer();
+            ALuint buffer = sound->getBuffer();
             auto bufferQueue = std::unique_ptr<ALuint[]>(new ALuint[numLoops]);
             for (int i = 0; i < numLoops; i++) {
                 bufferQueue[i] = buffer;
@@ -69,7 +69,7 @@ void CSoundChannel::start(CSound* sound, bool newUninterruptible) {
             }
             alSourcei(sourceID, AL_LOOPING, AL_FALSE);
         } else {
-            alSourcei(sourceID, AL_BUFFER, sound->getFile()->getFileBuffer());
+            alSourcei(sourceID, AL_BUFFER, sound->getBuffer());
             if ((error = alGetError()) != AL_NO_ERROR) {
                 __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to set buffer for sound %d (error code %d)", (int)sound->getHandle(), error);
             }

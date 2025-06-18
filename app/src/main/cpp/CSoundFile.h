@@ -5,7 +5,7 @@
 class CSoundFile {
 public:
     static CSoundFile* load(int fd, int64_t startOffset, int64_t length);
-    virtual ~CSoundFile();
+    virtual ~CSoundFile() = default;
 
     virtual bool load() = 0;
     // Returns number of frames read, or 0 if EOF, or < 0 on error
@@ -13,10 +13,6 @@ public:
     virtual void seek(int64_t frame) = 0;
     virtual int64_t tell() = 0;
     virtual void close() = 0;
-
-    void readFileToMemory();
-    bool isLoadedInMemory() const { return loaded; }
-    ALuint getFileBuffer() const { return fileBuffer; }
 
     ALenum getFormat() const { return format; }
     int getSampleRate() const { return sampleRate; }
@@ -33,7 +29,4 @@ protected:
     int bytesPerFrame;
 
     CSoundFile(int fd, int64_t startOffset, int64_t length);
-private:
-    ALuint fileBuffer = 0;
-    bool loaded = false;
 };

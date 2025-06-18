@@ -48,7 +48,7 @@ private:
     static constexpr int64_t streamBufferLength = 16 * 1024;    // In frames
     ALuint streamBuffers[2] = {};
     int64_t streamFileCursor = 0;
-	int64_t streamCursor = 0;
+    int64_t streamCursor = 0;
     std::mutex streamLock;
 
     float volume = 1.0f, pan = 0.0f;

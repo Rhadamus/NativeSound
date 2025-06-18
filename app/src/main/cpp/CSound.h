@@ -18,7 +18,11 @@ public:
     int getFlags() const { return flags; }
     int getDuration() const;
     int getOrigFrequency() const { return origFrequency; }
-
+    
+    ALuint getBuffer() const { return soundBuffer; }
+    bool hasBuffer() const { return soundBuffer > 0; }
+    void loadBuffer();
+    
     CSoundFile* getFile() const { return file; }
 private:
     short handle = -1;
@@ -27,4 +31,5 @@ private:
     int origFrequency = -1;
 
     CSoundFile* file;
+    ALuint soundBuffer = 0;
 };
