@@ -4,7 +4,7 @@
 
 class CSoundFile {
 public:
-    static CSoundFile* load(int fd, int64_t startOffset, int64_t length);
+    static CSoundFile* open(int fd, int64_t startOffset, int64_t length);
     virtual ~CSoundFile() = default;
 
     virtual bool load() = 0;

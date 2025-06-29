@@ -39,7 +39,7 @@ void CSoundChannel::deinit() {
     }
 }
 
-void CSoundChannel::start(CSound* sound, bool newUninterruptible) {
+void CSoundChannel::start(JNIEnv* jniEnv, jobject jniSound, CSound* sound, bool newUninterruptible) {
     if (sourceID == 0) return;
 
     ALenum error;
@@ -51,7 +51,7 @@ void CSoundChannel::start(CSound* sound, bool newUninterruptible) {
     }
     if ((sound->getFlags() & SNDF_PLAYFROMDISK) == 0) {
         if ((sound->getFlags() & SNDF_LOADONCALL) != 0 && !sound->hasBuffer()) {
-            sound->loadBuffer();
+            sound->loadBuffer(jniEnv, jniSound);
         }
         if (!sound->hasBuffer()) return;
         currentSound = sound;
@@ -83,9 +83,13 @@ void CSoundChannel::start(CSound* sound, bool newUninterruptible) {
                 return;
             }
         }
-
+        
+        streamingFile = sound->openFile(jniEnv, jniSound);
+        if (streamingFile == nullptr) {
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not open file for streaming sound %d", (int)sound->getHandle());
+            return;
+        }
         currentSound = sound;
-        streamFileCursor = 0;
         streamCursor = 0;
 
         alSourcei(sourceID, AL_LOOPING, AL_FALSE);
@@ -120,9 +124,11 @@ bool CSoundChannel::stop(bool force) {
 
     alSourceStop(sourceID);
     alSourcei(sourceID, AL_BUFFER, 0);
-    streamLock.lock();
-    currentSound = nullptr;
-    streamLock.unlock();
+    {
+        std::lock_guard lock(streamLock);
+        currentSound = nullptr;
+    }
+    delete streamingFile;
     return true;
 }
 void CSoundChannel::pause() {
@@ -204,7 +210,7 @@ void CSoundChannel::setPosition(int newPosition) {
         std::lock_guard lock(streamLock);
 
         streamCursor = (int64_t)newPosition * (int64_t)currentSound->getOrigFrequency() / 1000;
-        streamFileCursor = streamCursor;
+        streamingFile->seek(streamCursor);
         alSourceStop(sourceID);
 
         alSourcei(sourceID, AL_BUFFER, 0);
@@ -235,7 +241,7 @@ int CSoundChannel::getPosition() const {
     int frameOffset;
     alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &frameOffset);
     if ((currentSound->getFlags() & SNDF_PLAYFROMDISK) == 0) {
-        return (int)((int64_t)(frameOffset % currentSound->getFile()->getFrameLength()) * 1000 / currentSound->getOrigFrequency());
+        return (int)((int64_t)(frameOffset % currentSound->getFrameLength()) * 1000 / currentSound->getOrigFrequency());
     } else {
         return (int)((int64_t)(streamCursor + frameOffset) * 1000 / currentSound->getOrigFrequency());
     }
@@ -261,7 +267,7 @@ void CSoundChannel::updateStream() {
     std::lock_guard lock(streamLock);
     
     if (!isPlaying() || (currentSound->getFlags() & SNDF_PLAYFROMDISK) == 0) return;
-    CSoundFile* file = currentSound->getFile();
+    CSoundFile* file = streamingFile;
     if (file == nullptr) return;
 
     ALenum error;
@@ -286,12 +292,12 @@ void CSoundChannel::updateStream() {
         if (result >= 0 && result < streamBufferLength) {
             if (loopsLeft > 0) {
                 loopsLeft--;
-                streamFileCursor = 0;
+                file->seek(0);
                 if (loopsLeft == 0) {
                     break;
                 }
             } else if (numLoops == 0) {
-                streamFileCursor = 0;
+                file->seek(0);
             }
         }
         if (result < 0) {
@@ -313,20 +319,17 @@ CSound* CSoundChannel::getSound() const {
 }
 
 int64_t CSoundChannel::fillStreamBuffer(ALuint bufferID, int64_t numFrames) {
-    CSoundFile* file = currentSound->getFile();
+    CSoundFile* file = streamingFile;
     if (file == nullptr) return 0;
 
     auto streamData = std::unique_ptr<char[]>(new char[streamBufferLength * file->getBytesPerFrame()]);
     numFrames = std::min(numFrames, streamBufferLength);
 
-    file->seek(streamFileCursor);
     int64_t readResult = file->read(streamData.get(), numFrames);
     if (readResult <= 0) {
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to read file for sound %d (error code %lld)", (int)currentSound->getHandle(), (long long)readResult);
         return readResult;
     }
-
-    streamFileCursor += readResult;
 
     ALenum error;
     alBufferData(bufferID, file->getFormat(), streamData.get(), readResult * file->getBytesPerFrame(), file->getSampleRate());

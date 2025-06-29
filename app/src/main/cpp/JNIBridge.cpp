@@ -63,7 +63,7 @@ Java_Application_CSoundPlayer_playNative(JNIEnv *env, jobject thiz, jobject soun
     if (ptr == nullptr) return;
     CSound* soundPtr = getSoundPtr(env, sound);
     if (soundPtr == nullptr) return;
-    ptr->play(soundPtr, n_loops, channel, prio, volume, pan, freq, focus);
+    ptr->play(env, sound, soundPtr, n_loops, channel, prio, volume, pan, freq, focus);
 }
 extern "C"
 JNIEXPORT void JNICALL
@@ -405,10 +405,10 @@ Java_Banks_CSound_allocNative2(JNIEnv *env, jobject thiz) {
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_Banks_CSound_loadNative(JNIEnv *env, jobject thiz, jint fd, jlong startOffset, jlong length) {
+Java_Banks_CSound_load(JNIEnv *env, jobject thiz) {
     CSound* ptr = getSoundPtr(env, thiz);
     if (ptr == nullptr) return;
-    ptr->load(fd, startOffset, length);
+    ptr->load(env, thiz);
 }
 extern "C"
 JNIEXPORT void JNICALL

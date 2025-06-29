@@ -48,8 +48,8 @@ public class CSound {
         markedForDeletion = false;
     }
     private native void allocNative2();
-
-    public void load(short h) {
+    
+    public long[] openFd(short h) {
         AssetFileDescriptor fd = null;
         if (MMFRuntime.inst.assetsAvailable) {
             fd = MMFRuntime.inst.getSoundFromAssets(String.format(Locale.US, "s%04d", h));
@@ -61,13 +61,13 @@ public class CSound {
                 fd = MMFRuntime.inst.getResources().openRawResourceFd(MMFRuntime.inst.getResourceID(String.format(Locale.US, "raw/s%04d", h)));
             } catch (Resources.NotFoundException e) {
                 Log.Log("Could not find sound with handle " + h);
-                return;
+                return null;
             }
         }
-
-        loadNative(fd.getParcelFileDescriptor().detachFd(), fd.getStartOffset(), fd.getLength());
+        
+        return new long[] { (long)fd.getParcelFileDescriptor().detachFd(), fd.getStartOffset(), fd.getLength() };
     }
-    public void load() {
+    public long[] openFd() {
         AssetFileDescriptor fd;
         if (filename.contains("/")) {
             Uri uri;
@@ -81,20 +81,20 @@ public class CSound {
                 fd = MMFRuntime.inst.getContentResolver().openAssetFileDescriptor(uri, "r");
             } catch (FileNotFoundException e) {
                 Log.Log("Could not find sound file " + filename);
-                return;
+                return null;
             }
         } else {
             try {
                 fd = MMFRuntime.inst.getResources().getAssets().openFd(filename);
             } catch (IOException e) {
                 Log.Log("Could not open sound file " + filename);
-                return;
+                return null;
             }
         }
-
-        loadNative(fd.getParcelFileDescriptor().detachFd(), fd.getStartOffset(), fd.getLength());
+        
+        return new long[] { (long)fd.getParcelFileDescriptor().detachFd(), fd.getStartOffset(), fd.getLength() };
     }
-    private native void loadNative(int fd, long startOffset, long length);
-
+    
+    public native void load();
     public native void release();
 }

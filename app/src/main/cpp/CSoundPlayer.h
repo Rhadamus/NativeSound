@@ -1,6 +1,7 @@
 #pragma once
 #include <thread>
 #include <atomic>
+#include <jni.h>
 #include <AL/alc.h>
 #include "CSoundChannel.h"
 
@@ -18,7 +19,7 @@ public:
     void setPan(float);
     float getPan() const { return mainPan; }
 
-    void play(CSound*, int nLoops, int channel, bool prio, int volume, int pan, int freq, bool focus);
+    void play(JNIEnv*, jobject jniSound, CSound*, int nLoops, int channel, bool prio, int volume, int pan, int freq, bool focus);
 
     void stopAllSounds();
     void pauseAllChannels();

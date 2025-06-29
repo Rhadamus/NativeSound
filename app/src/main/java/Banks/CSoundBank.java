@@ -116,7 +116,7 @@ public class CSoundBank implements IEnum {
 					if (name == null) name = "";
 
 					newSounds[h] = new CSound(name, (short)h, handleToFrequency[h], handleToFlags[h]);
-					newSounds[h].load((short)h);
+					newSounds[h].load();
 				}
 			}
 		}

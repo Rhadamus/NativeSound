@@ -7,7 +7,7 @@
 #include "CSoundFileOGG.h"
 #include "CSoundFileMP3.h"
 
-CSoundFile* CSoundFile::load(int fd, int64_t startOffset, int64_t length) {
+CSoundFile* CSoundFile::open(int fd, int64_t startOffset, int64_t length) {
     CSoundFile* result;
     if (CSoundFileWAV::verify(fd, startOffset, length)) {
         result = new CSoundFileWAV(fd, startOffset, length);

@@ -16,31 +16,71 @@ CSound::~CSound() {
             __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to delete sound buffer (error code %d)", error);
         }
     }
-    delete file;
 }
 
-void CSound::load(int fd, int64_t startOffset, int64_t length) {
+void CSound::load(JNIEnv* jniEnv, jobject jniSound) {
     __android_log_print(ANDROID_LOG_INFO, NATIVESOUND_TAG, "Loading sound with handle %d and flags 0x%04X", (int)handle, flags);
-    file = CSoundFile::load(fd, startOffset, length);
-    if (file == nullptr) {
-        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not load sound %d", (int)handle);
-        return;
+    
+    {
+        auto file = std::unique_ptr<CSoundFile>(openFile(jniEnv, jniSound));
+        if (file == nullptr) {
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not load sound %d", (int)handle);
+            return;
+        }
+        frameLength = file->getFrameLength();
     }
 
     if ((flags & SNDF_LOADONCALL) == 0 && (flags & SNDF_PLAYFROMDISK) == 0) {
-        loadBuffer();
+        loadBuffer(jniEnv, jniSound);
     }
 
     __android_log_print(ANDROID_LOG_INFO, NATIVESOUND_TAG, "Success");
 }
-
-int CSound::getDuration() const {
-    return (int)(file->getFrameLength() * 1000 / origFrequency);
+CSoundFile* CSound::openFile(JNIEnv* jniEnv, jobject jniSound) const {
+    jlongArray jniFdInfo = nullptr;
+    
+    if (handle > -1) {
+        jclass soundClazz = jniEnv->GetObjectClass(jniSound);
+        jmethodID jniOpenFd = jniEnv->GetMethodID(soundClazz, "openFd", "(S)[J");
+        if (jniOpenFd == nullptr) {
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not find CSound.openFd(short) method");
+            return nullptr;
+        }
+        
+        jniFdInfo = (jlongArray)jniEnv->CallObjectMethod(jniSound, jniOpenFd, (jshort)handle);
+    } else {
+        jclass soundClazz = jniEnv->GetObjectClass(jniSound);
+        jmethodID jniOpenFd = jniEnv->GetMethodID(soundClazz, "openFd", "()[J");
+        if (jniOpenFd == nullptr) {
+            __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not call CSound.openFd() method");
+            return nullptr;
+        }
+        
+        jniFdInfo = (jlongArray)jniEnv->CallObjectMethod(jniSound, jniOpenFd);
+    }
+    if (jniFdInfo == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to get fd info of sound %d", (int)handle);
+        return nullptr;
+    }
+    
+    jlong* fdInfo = jniEnv->GetLongArrayElements(jniFdInfo, nullptr);
+    if (fdInfo == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to get fd info of sound %d", (int)handle);
+        return nullptr;
+    }
+    CSoundFile* file = CSoundFile::open((int)fdInfo[0], (int64_t)fdInfo[1], (int64_t)fdInfo[2]);
+    jniEnv->ReleaseLongArrayElements(jniFdInfo, fdInfo, 0);
+    
+    return file;
 }
-
-void CSound::loadBuffer() {
+void CSound::loadBuffer(JNIEnv* jniEnv, jobject jniSound) {
     if (hasBuffer()) return;
-
+    
+    auto file = std::unique_ptr<CSoundFile>(openFile(jniEnv, jniSound));
+    if (file == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Could not open file for sound %d", (int)handle);
+        return;
+    }
     auto fileData = std::unique_ptr<char[]>(new char[file->getFrameLength() * file->getBytesPerFrame()]);
 
     int64_t resultRead = file->read(fileData.get(), file->getFrameLength());

@@ -1,5 +1,6 @@
 #pragma once
 #include <mutex>
+#include <jni.h>
 #include <AL/al.h>
 #include "CSound.h"
 
@@ -12,7 +13,7 @@ public:
     void init(CSoundPlayer*);
     void deinit();
 
-    void start(CSound*, bool uninterruptible);
+    void start(JNIEnv*, jobject jniSound, CSound*, bool uninterruptible);
     bool stop(bool force);
     void pause();
     void resume();
@@ -44,10 +45,10 @@ private:
     ALuint sourceID = 0;
 
     CSound* currentSound = nullptr;
+    CSoundFile* streamingFile = nullptr;
 
     static constexpr int64_t streamBufferLength = 16 * 1024;    // In frames
     ALuint streamBuffers[2] = {};
-    int64_t streamFileCursor = 0;
     int64_t streamCursor = 0;
     std::mutex streamLock;
 

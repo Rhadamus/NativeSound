@@ -60,8 +60,8 @@ void CSoundPlayer::setPan(float pan) {
     }
 }
 
-void CSoundPlayer::play(CSound* sound, int nLoops, int channel, bool prio, int volume, int pan,
-                        int freq, bool focus) {
+void CSoundPlayer::play(JNIEnv* jniEnv, jobject jniSound, CSound* sound, int nLoops, int channel,
+                        bool prio, int volume, int pan, int freq, bool focus) {
     bool withChannel = channel != -1;
 
     if (!multipleSounds) channel = 0;
@@ -92,7 +92,7 @@ void CSoundPlayer::play(CSound* sound, int nLoops, int channel, bool prio, int v
         channels[channel].setFrequency(-1);
     }
 
-    if (focus) channels[channel].start(sound, prio);
+    if (focus) channels[channel].start(jniEnv, jniSound, sound, prio);
 }
 
 void CSoundPlayer::stopAllSounds() {
