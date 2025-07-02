@@ -39,7 +39,7 @@ public:
     void updateFrequency();
     void updateStream();
 
-    CSound* getSound() const;
+    CSound* getSound() const { return currentSound; }
 private:
     CSoundPlayer* player = nullptr;
     ALuint sourceID = 0;

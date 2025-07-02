@@ -24,7 +24,8 @@ void CSoundChannel::init(CSoundPlayer* initPlayer) {
 }
 void CSoundChannel::deinit() {
     ALenum error;
-
+    
+    stop(true);
     if (sourceID != 0) {
         alDeleteSources(1, &sourceID);
         if ((error = alGetError()) != AL_NO_ERROR) {
@@ -44,11 +45,12 @@ void CSoundChannel::start(JNIEnv* jniEnv, jobject jniSound, CSound* sound, bool 
 
     ALenum error;
 
-    if (isPlaying()) alSourceStop(sourceID);
+    if (isPlaying() || streamingFile != nullptr) stop(true);
     alSourcei(sourceID, AL_BUFFER, 0);
     if ((error = alGetError()) != AL_NO_ERROR) {
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to clear buffers of source (error code %d)", error);
     }
+    
     if ((sound->getFlags() & SNDF_PLAYFROMDISK) == 0) {
         if ((sound->getFlags() & SNDF_LOADONCALL) != 0 && !sound->hasBuffer()) {
             sound->loadBuffer(jniEnv, jniSound);
@@ -127,8 +129,9 @@ bool CSoundChannel::stop(bool force) {
     {
         std::lock_guard lock(streamLock);
         currentSound = nullptr;
+        delete streamingFile;
+        streamingFile = nullptr;
     }
-    delete streamingFile;
     return true;
 }
 void CSoundChannel::pause() {
@@ -311,11 +314,6 @@ void CSoundChannel::updateStream() {
         }
         processedBuffers--;
     }
-}
-
-CSound* CSoundChannel::getSound() const {
-    if (!isPlaying()) return nullptr;
-    return currentSound;
 }
 
 int64_t CSoundChannel::fillStreamBuffer(ALuint bufferID, int64_t numFrames) {

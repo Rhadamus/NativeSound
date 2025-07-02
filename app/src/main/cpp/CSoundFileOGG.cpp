@@ -75,7 +75,6 @@ bool CSoundFileOGG::load() {
     vorbis_info* soundInfo = ov_info(&file, -1);
     if (soundInfo == nullptr) {
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to retrieve Ogg info");
-        ov_clear(&file);
         return false;
     }
 
