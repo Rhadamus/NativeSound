@@ -51,6 +51,7 @@ void CSoundChannel::start(JNIEnv* jniEnv, jobject jniSound, CSound* sound, bool 
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to clear buffers of source (error code %d)", error);
     }
     
+    std::lock_guard lock(streamLock);
     if ((sound->getFlags() & SNDF_PLAYFROMDISK) == 0) {
         if ((sound->getFlags() & SNDF_LOADONCALL) != 0 && !sound->hasBuffer()) {
             sound->loadBuffer(jniEnv, jniSound);
@@ -267,9 +268,19 @@ void CSoundChannel::updateFrequency() {
     }
 }
 void CSoundChannel::updateStream() {
-    std::lock_guard lock(streamLock);
+    std::unique_lock lock(streamLock, std::try_to_lock);
+    if (!lock.owns_lock()) {
+        // Don't bother waiting, the other places that lock this mutex already update the stream
+        return;
+    }
     
-    if (!isPlaying() || (currentSound->getFlags() & SNDF_PLAYFROMDISK) == 0) return;
+    if (!isPlaying() || (currentSound->getFlags() & SNDF_PLAYFROMDISK) == 0) {
+        if (streamingFile != nullptr) {
+            delete streamingFile;
+            streamingFile = nullptr;
+        }
+        return;
+    }
     CSoundFile* file = streamingFile;
     if (file == nullptr) return;
 
