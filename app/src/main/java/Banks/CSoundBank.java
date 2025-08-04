@@ -83,8 +83,8 @@ public class CSoundBank implements IEnum {
 	}
 
 	@Override
-	public short enumerate(short num) {
-		setToLoad(num);
+	public int enumerate(int num) {
+		setToLoad((short)num);
 		return -1;
 	}
 
@@ -123,7 +123,7 @@ public class CSoundBank implements IEnum {
 
 		sounds = newSounds;
 		resetToLoad();
-		CRunApp.allSoundsPreLoaded = true;
+		app.allSoundsPreLoaded = true;
 	}
 	public void unloadAll() {
 		if (sounds == null) return;

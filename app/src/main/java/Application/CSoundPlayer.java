@@ -17,6 +17,7 @@
  */
 package Application;
 
+import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.os.Build;
@@ -29,8 +30,9 @@ public class CSoundPlayer {
 	public static final int SNDF_PLAYFROMDISK = 0x0020;
 
 	private long ptr;
-	public CRunApp app;
-
+	public final CRunApp app;
+	
+	private final boolean audioFocusEnabled;
 	public AudioAttributes attributes;
 	public AudioFocusFusion audioFocusFusion;
 	private boolean hasFocus;
@@ -47,6 +49,8 @@ public class CSoundPlayer {
 		app = a;
 		System.loadLibrary("NativeSound");
 		allocNative();
+		
+		audioFocusEnabled = detectAudioFocus();
 
 		attributes = null;
 		if (Build.VERSION.SDK_INT >= 21) {
@@ -57,12 +61,16 @@ public class CSoundPlayer {
 					.build();
 		}
 
-		audioFocusFusion = new AudioFocusFusion(MMFRuntime.inst, attributes);
-		AudioFocusFusion.AudioFocusListener audioflistener = result -> hasFocus = result;
-		audioFocusFusion.setAudioFocusListener(audioflistener);
+		if (audioFocusEnabled) {
+			audioFocusFusion = new AudioFocusFusion(MMFRuntime.inst, attributes);
+			AudioFocusFusion.AudioFocusListener audioflistener = result -> hasFocus = result;
+			audioFocusFusion.setAudioFocusListener(audioflistener);
 
-		hasFocus = audioFocusFusion.getAudioFocus();
-		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+			hasFocus = audioFocusFusion.getAudioFocus();
+			if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+		} else {
+			hasFocus = true;
+		}
 	}
 	private native void allocNative();
 
@@ -73,14 +81,14 @@ public class CSoundPlayer {
 		releaseLeakedSounds();
 		CSound sound = app.soundBank.getSoundFromHandle(handle);
 		if (sound == null) return;
-		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+		if (audioFocusEnabled && !hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		playNative(sound, nLoops, channel, bPrio, _volume, _pan, _freq, hasFocus);
 	}
 	public void playFile(String filename, int nLoops, int channel, boolean bPrio, int _volume, int _pan, int _freq) {
 		releaseLeakedSounds();
 		CSound sound = new CSound(filename);
 		sound.load();
-		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+		if (audioFocusEnabled && !hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		playNative(sound, nLoops, channel, bPrio, _volume, _pan, _freq, hasFocus);
 	}
 	private native void playNative(CSound sound, int nLoops, int channel, boolean prio, int volume,
@@ -108,7 +116,7 @@ public class CSoundPlayer {
 
 	public native void pause(short handle);
 	public void resume(short handle) {
-		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+		if (audioFocusEnabled && !hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		resumeNative(handle);
 	}
 	private native void resumeNative(short handle);
@@ -116,7 +124,7 @@ public class CSoundPlayer {
 	// Runtime Pause
 	public void pause2() {
 		pauseApp();
-		if (hasFocus) {
+		if (audioFocusEnabled && hasFocus) {
 			audioFocusFusion.abandonAudioFocus();
 			hasFocus = false;
 		}
@@ -127,13 +135,13 @@ public class CSoundPlayer {
 
 	// Runtime Resume
 	public void resume2() {
-		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+		if (audioFocusEnabled && !hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		resumeApp();
 	}
 	private native void resumeApp();
 
 	public void resumeAllChannels() {
-		hasFocus = audioFocusFusion.requestAudioFocus();
+		if (audioFocusEnabled && !hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		resumeAllChannelsNative();
 	}
 	private native void resumeAllChannelsNative();
@@ -147,7 +155,7 @@ public class CSoundPlayer {
 	public native void stopChannelNative(int channel);
 
 	public void resumeChannel(int channel) {
-		if (!hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
+		if (audioFocusEnabled && !hasFocus) hasFocus = audioFocusFusion.requestAudioFocus();
 		resumeChannelNative(channel);
 	}
 	private native void resumeChannelNative(int channel);
@@ -202,6 +210,18 @@ public class CSoundPlayer {
 		releaseNative();
 	}
 	private native void releaseNative();
+	
+	private boolean detectAudioFocus() {
+		PackageManager pm = MMFRuntime.inst.getPackageManager();
+		
+		if (pm.hasSystemFeature(PackageManager.FEATURE_PC) ||
+			pm.hasSystemFeature("org.chromium.arc") ||
+			pm.hasSystemFeature("org.chromium.arc.device_management") {
+			return false;
+		}
+		return MMFRuntime.inst.getResourceID("bool/AUDIO_FOCUS") == 0 ||
+			MMFRuntime.inst.getResources().getBoolean(MMFRuntime.inst.getResourceID("bool/AUDIO_FOCUS"));
+	}
 
 	private void releaseLeakedSounds() {
 		if (app.soundBank.sounds == null) return;
