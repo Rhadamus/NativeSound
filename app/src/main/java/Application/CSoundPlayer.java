@@ -216,7 +216,7 @@ public class CSoundPlayer {
 		
 		if (pm.hasSystemFeature(PackageManager.FEATURE_PC) ||
 			pm.hasSystemFeature("org.chromium.arc") ||
-			pm.hasSystemFeature("org.chromium.arc.device_management") {
+			pm.hasSystemFeature("org.chromium.arc.device_management")) {
 			return false;
 		}
 		return MMFRuntime.inst.getResourceID("bool/AUDIO_FOCUS") == 0 ||
