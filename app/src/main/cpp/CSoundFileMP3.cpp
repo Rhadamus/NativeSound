@@ -32,18 +32,32 @@ static size_t readMp3(void* userData, void* dest, size_t bytesToRead) {
 static drmp3_bool32 seekMp3(void* userData, int offset, drmp3_seek_origin origin) {
     CSoundFileMP3::DataSource* src = (CSoundFileMP3::DataSource*)userData;
 
-    int whence = SEEK_CUR;
-    if (origin == drmp3_seek_origin_start) {
+    switch (origin) {
+    case DRMP3_SEEK_SET:
         offset += src->startOffset;
-        whence = SEEK_SET;
+        break;
+    case DRMP3_SEEK_END:
+        offset = src->endOffset - offset;
+        origin = DRMP3_SEEK_SET;
+        break;
     }
-    return lseek64(src->fd, offset, whence) >= 0;
+    
+    return lseek64(src->fd, offset, origin) >= 0;
+}
+static drmp3_bool32 tellMp3(void* userData, drmp3_int64* cursor) {
+    CSoundFileMP3::DataSource* src = (CSoundFileMP3::DataSource*)userData;
+    
+    off64_t result = lseek64(src->fd, 0, SEEK_CUR);
+    if (result < 0) return DRMP3_FALSE;
+    
+    *cursor = result;
+    return DRMP3_TRUE;
 }
 
 bool CSoundFileMP3::load() {
     lseek64(fd, startOffset, SEEK_SET);
 
-    if (!drmp3_init(&file, readMp3, seekMp3, &datasource, nullptr)) {
+    if (!drmp3_init(&file, readMp3, seekMp3, tellMp3, nullptr, &datasource, nullptr)) {
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to open MP3 file");
         return false;
     }
@@ -79,7 +93,7 @@ bool CSoundFileMP3::verify(int fd, int64_t startOffset, int64_t length) {
     }
     DataSource tempDatasource = { fd, startOffset, endOffset };
     drmp3 tempFile;
-    bool valid = drmp3_init(&tempFile, readMp3, seekMp3, &tempDatasource, nullptr);
+    bool valid = drmp3_init(&tempFile, readMp3, seekMp3, tellMp3, nullptr, &tempDatasource, nullptr);
     drmp3_uninit(&tempFile);
 
     return valid;
