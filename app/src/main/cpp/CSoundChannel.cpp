@@ -335,9 +335,11 @@ int64_t CSoundChannel::fillStreamBuffer(ALuint bufferID, int64_t numFrames) {
     numFrames = std::min(numFrames, streamBufferLength);
 
     int64_t readResult = file->read(streamData.get(), numFrames);
-    if (readResult <= 0) {
+    if (readResult < 0) {
         __android_log_print(ANDROID_LOG_ERROR, NATIVESOUND_TAG, "Failed to read file for sound %d (error code %lld)", (int)currentSound->getHandle(), (long long)readResult);
         return readResult;
+    } else if (readResult == 0) {
+        return 0;
     }
 
     ALenum error;
