@@ -37,7 +37,7 @@ static drmp3_bool32 seekMp3(void* userData, int offset, drmp3_seek_origin origin
         offset += src->startOffset;
         break;
     case DRMP3_SEEK_END:
-        offset = src->endOffset - offset;
+        offset += src->endOffset;
         origin = DRMP3_SEEK_SET;
         break;
     }

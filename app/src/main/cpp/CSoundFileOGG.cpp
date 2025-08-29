@@ -39,7 +39,7 @@ static int seekOgg(void* datasource, ogg_int64_t offset, int whence) {
         offset += src->startOffset;
         break;
     case SEEK_END:
-        offset = src->endOffset - offset;
+        offset += src->endOffset;
         whence = SEEK_SET;
         break;
     }
